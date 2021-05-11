@@ -6,10 +6,10 @@ import numpy as np
 import utils
 from PIL import Image
 from plantcv import plantcv as pcv
-
+# "../jooyoung/DB_extract/example_seven_standard_extension/"
 parser = argparse.ArgumentParser(description='Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages')
-parser.add_argument('--path', default="./data/", type=str, help='dir path for input')
-parser.add_argument('--res_path', default="./res/", type=str, help='dir path for output')
+parser.add_argument('--input_path', default="../../jooyoung/DB_extract/example_seven_standard_extension/", type=str, help='dir path for input')
+parser.add_argument('--output_path', default="./res/", type=str, help='dir path for output')
 
 args = parser.parse_args()
 
@@ -109,7 +109,7 @@ def Mosaic_FP(input_path, result_path, preprocessing = True, detection = True):
 
     img_path_list = sorted(glob.glob(input_path + "/*"))
     fpmodel = utils.get_model()
-
+    make_dir(result_path)
     result_path = "{}{}".format(result_path, input_path.split("/")[-1])
     if preprocessing == True:
         result_path = result_path + "_preprocessing"
@@ -119,15 +119,12 @@ def Mosaic_FP(input_path, result_path, preprocessing = True, detection = True):
         result_path = result_path + "_nodetection"
     print(result_path)
     make_dir(result_path)
-    csv_name = open("{}/result_TRE.csv".format(result_path), 'w')
-    file_csv = csv.writer(csv_name)
-    file_csv.writerow(['pair_list', 'overlap', 'surf_TRE', 'bsplined_TRE'])
+
 
     for input_path_idx, input_path in enumerate(img_path_list):
         idx_result_path = "{}/{}_{}/".format(result_path, input_path_idx, input_path.split("/")[-1])
 
         img_list = sorted(glob.glob(input_path + "/*"))
-
         ####20200804
 
         make_dir(idx_result_path)
@@ -202,6 +199,9 @@ def Mosaic_FP(input_path, result_path, preprocessing = True, detection = True):
 
             img_to_vessel = root_vessel
 
+            skeleton = pcv.morphology.skeletonize(mask=root_vessel)
+            branch_mask = pcv.morphology.find_branch_pts(skel_img=skeleton)
+
             mapping_shape = list(mask.shape)
             if result_path.find("detection") > -1:
                 detection_before = datetime.now()
@@ -215,18 +215,18 @@ def Mosaic_FP(input_path, result_path, preprocessing = True, detection = True):
                     if fovea != None and disc != None:
                         center_pt.append([fovea, img_idx])
 
-
                     disc_exist.append(img)
-                    disc_exist_vessel.append({'vessel' : img_to_vessel, 'idx' : img_idx, 'OM_info' : [fovea, disc]})
+                    disc_exist_vessel.append(
+                        {'vessel': img_to_vessel, 'branch': branch_mask, 'idx': img_idx, 'OM_info': [fovea, disc]})
                 else:
                     disc_no.append(img)
-                    disc_no_vessel.append({'vessel': img_to_vessel, 'idx': img_idx})
+                    disc_no_vessel.append({'vessel': img_to_vessel, 'branch': branch_mask, 'idx': img_idx})
 
                 detection_after = datetime.now()
                 calculate_time += (detection_after - detection_before).total_seconds()
             else:
                 disc_exist.append(img)
-                disc_exist_vessel.append({'vessel': img_to_vessel, 'idx': img_idx})
+                disc_exist_vessel.append({'vessel': img_to_vessel, 'branch': branch_mask, 'idx': img_idx})
 
 
         #center_pt 0 is fovea center, 1 is image idx
@@ -253,10 +253,22 @@ def Mosaic_FP(input_path, result_path, preprocessing = True, detection = True):
 
 
         if result_path.find("pair") > -1:
+            csv_name = open("{}/result_TRE.csv".format(result_path), 'w')
+            file_csv = csv.writer(csv_name)
+            file_csv.writerow(['pair_list', 'overlap', 'surf_TRE', 'bsplined_TRE'])
+
             montage1 = regist_SIFT_montage([disc_exist, disc_exist_vessel], [disc_no, disc_no_vessel],
                                            mask, using_detection=False,
                                            center_pt=center_pt)
             montage1.registration_pair()
+            try:
+                for value_length in range(montage1.TRE_pair.__len__()):
+                    file_csv.writerow([str(input_path_idx) + "_" + montage1.TRE_pair[value_length][0],
+                                       montage1.TRE_pair[value_length][1], montage1.TRE_pair[value_length][2],
+                                       montage1.TRE_pair[value_length][3],
+                                       montage1.TRE_pair[value_length][4], montage1.TRE_pair[value_length][5]])
+            except:
+                continue
         else:
             if result_path.find("detection") > -1:
                 montage1 = regist_SIFT_montage([montage_image_list, montage_vessel_list],
@@ -272,15 +284,9 @@ def Mosaic_FP(input_path, result_path, preprocessing = True, detection = True):
             Image.fromarray(mosaic_fp).save(laterality_result_path + "mosaic_result.png")
             Image.fromarray(mosaic_vessel['vessel']).save(laterality_result_path + "mosaic_vessel_result.png")
 
-        try:
-            for value_length in range(montage1.TRE_pair.__len__()):
-                file_csv.writerow([str(input_path_idx) + "_" + montage1.TRE_pair[value_length][0],
-                                   montage1.TRE_pair[value_length][1], montage1.TRE_pair[value_length][2], montage1.TRE_pair[value_length][3],
-                                   montage1.TRE_pair[value_length][4], montage1.TRE_pair[value_length][5]])
-        except:
-            continue
 
 
 
-Mosaic_FP("../jooyoung/DB_extract/example_seven_standard_extension","./", True, True)
+
+Mosaic_FP(args.input_path,args.output_path, True, True)
 

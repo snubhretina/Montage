@@ -9,8 +9,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from registration_BSpline import regist_BSpline
 from numpy.linalg import inv
-sys.path.append('./blending_ref')
-sys.path.append('./blending_ref/image_spline')
 from spline import do_spline
 from blending_pyramid import *
 from skimage.morphology import skeletonize
@@ -95,10 +93,10 @@ class regist_SIFT_montage():
 
         for idx, img_idx in enumerate(all_image[0]):
              if self.using_VPmap == True:
-                kps, descs, sift_kpt_img, _ = self.get_sift_kpt(img_idx, self.mask, is_VesselMask=self.img_vessel_list[idx],
+                kps, descs = self.get_sift_kpt(img_idx, self.mask, is_VesselMask=self.img_vessel_list[idx],
                                                                 hess_thresh=self.hess_thresh)
              else:
-                kps, descs, sift_kpt_img, _ = self.get_sift_kpt(img_idx, self.mask, is_VesselMask = None, hess_thresh=self.hess_thresh)
+                kps, descs = self.get_sift_kpt(img_idx, self.mask, is_VesselMask = None, hess_thresh=self.hess_thresh)
              self.surf_info['kpt_list'].append(kps)
              self.surf_info['des_list'].append(descs)
 
@@ -107,7 +105,7 @@ class regist_SIFT_montage():
                 if idx == idx_2:
                     continue
                 good = self.matching(self.surf_info['kpt_list'][idx], self.surf_info['des_list'][idx],
-                    self.surf_info['kpt_list'][idx_2], self.surf_info['des_list'][idx_2], self.mask, self.mask, distance_m =  self.matching_distance)
+                    self.surf_info['kpt_list'][idx_2], self.surf_info['des_list'][idx_2], distance_m =  self.matching_distance)
                 try:
                     h, good_homography = self.find_homography(self.surf_info['kpt_list'][idx], self.surf_info['kpt_list'][idx_2], good)
                 except:
@@ -169,6 +167,11 @@ class regist_SIFT_montage():
             if FOV_mask[int(y), int(x)] == 255:
                 excluded_kps.append(kps[kps_idx])
                 excluded_descs.append(descs[kps_idx])
+
+        sift_kpt_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
+
+        kft_img = cv2.drawKeypoints(gray_img_norm, excluded_kps, sift_kpt_img,
+                                    flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         return excluded_kps, np.array(excluded_descs)
 
@@ -287,7 +290,7 @@ class regist_SIFT_montage():
         self.res_min_pt = res_min_pt
 
         if self.res_max_pt[0] - self.res_min_pt[0] > 20000 or  self.res_max_pt[1] - self.res_min_pt[1] > 20000:
-            print('image size is big')
+            print('image size is too big')
             return False, [[], []], [[], []]
 
         mask1_expended, mask2_expended = self.registrationFromMatrix(mask1, mask2)
@@ -383,24 +386,23 @@ class regist_SIFT_montage():
 
             #get keypoint from image
             if self.using_VPmap == True:
-                img_kps, img_descs, img_sift_kpt_img, _ = self.get_sift_kpt(img_idx, exist_mask,
+                img_kps, img_descs = self.get_sift_kpt(img_idx, exist_mask,
                                                                             is_VesselMask=self.img_vessel_list[idx][
                                                                                 'vessel'],
                                                                             hess_thresh=self.hess_thresh)
-                base_kpt, base_descs, base_sift_kpt_img, kpt_img = self.get_sift_kpt(base_img, base_mask,
+                base_kpt, base_descs = self.get_sift_kpt(base_img, base_mask,
                                                                                      is_VesselMask=self.base_vessel[
                                                                                          'vessel'],
                                                                                      hess_thresh=self.hess_thresh)
             else:
-                img_kps, img_descs, img_sift_kpt_img, _ = self.get_sift_kpt(img_idx, exist_mask, is_VesselMask=None,
+                img_kps, img_descs = self.get_sift_kpt(img_idx, exist_mask, is_VesselMask=None,
                                                                             hess_thresh=self.hess_thresh)
-                base_kpt, base_descs, base_sift_kpt_img, kpt_img = self.get_sift_kpt(base_img, base_mask,
+                base_kpt, base_descs = self.get_sift_kpt(base_img, base_mask,
                                                                                      is_VesselMask=None,
                                                                                      hess_thresh=self.hess_thresh)
 
             good = self.matching(base_kpt, base_descs,
-                                 img_kps, img_descs,
-                                 base_mask, self.mask, distance_m=self.matching_distance)
+                                 img_kps, img_descs, distance_m=self.matching_distance)
 
             h, good = self.find_homography(base_kpt, img_kps, good)
 
@@ -446,8 +448,6 @@ class regist_SIFT_montage():
                 except Exception as e:
                     print(e)
 
-            # for surf_idx, surf_result_img in enumerate([base_img, img_idx, self.base_vessel, base_mask, img_mask, self.vessel_img_list[idx]]):
-            #     Image.fromarray(surf_result_img.astype(np.uint8)).save("./montage_7etdrs/1_2_SIFT_result/{}_{}.jpg".format('surf_result', surf_idx))
 
             [img_idx, img_vessel, img_mask, bsp] = self.do_bspline(img_idx, base_vessel['vessel'],
                                                                    target_vessel['vessel'], base_mask,
@@ -512,8 +512,6 @@ class regist_SIFT_montage():
             self.branching_error_list.append([bspline_tar_error_image, '{}_{}_target_error.png'.format(base_vessel['idx'],
                                                                                                target_vessel['idx'])])
 
-            cv2.imwrite("./{}_mask.jpg".format(self.regist_count), base_img)
-            cv2.imwrite("./{}_montage.jpg".format(self.regist_count), img_mask)
             self.regist_count += 1
         self.base_img = base_img
 
@@ -528,7 +526,7 @@ class regist_SIFT_montage():
         base_mask = self.base_mask.copy()
 
         while (img_list.__len__()):
-            base_kps, base_descs, base_sift_kpt_img, base_kpt_img = self.get_sift_kpt(base_img, base_mask,
+            base_kps, base_descs = self.get_sift_kpt(base_img, base_mask,
                                                                                       is_VesselMask=self.base_vessel['vessel'],
                                                                                       hess_thresh=self.hess_thresh)
             # if self.using_VPmap == True:
@@ -551,12 +549,11 @@ class regist_SIFT_montage():
                 no_fp_vessel = np.zeros(base_img.shape[:2]).astype(np.uint8)
                 no_fp_vessel[:img_list[no_fp_idx].shape[0], :img_list[no_fp_idx].shape[1]] = self.img_vessel_list[no_fp_idx]['vessel']
 
-                np_fp_kpt, no_fp_des, no_fp_kpt_img, kpt_img = self.get_sift_kpt(no_fp_img, fp_mask,
+                np_fp_kpt, no_fp_des = self.get_sift_kpt(no_fp_img, fp_mask,
                                                                                  is_VesselMask = no_fp_vessel,
                                                                                  hess_thresh=self.hess_thresh)
 
-                good = self.matching(base_kps, base_descs, np_fp_kpt, no_fp_des, self.base_mask,
-                                     fp_mask, distance_m=self.matching_distance)
+                good = self.matching(base_kps, base_descs, np_fp_kpt, no_fp_des, distance_m=self.matching_distance)
                 try:
                     h, good = self.find_homography(base_kps, np_fp_kpt, good)
                 except:
@@ -573,14 +570,6 @@ class regist_SIFT_montage():
                         fp_kpt = np_fp_kpt
                         img_vessel = self.img_vessel_list[no_fp_idx]
                         matching_good = [no_fp_idx, good, h]
-                # matching_img = cv2.drawMatchesKnn(base_img, base_kps, no_fp_img, np_fp_kpt, good, flags=2, outImg=None)
-                # matching_img2 = cv2.drawMatchesKnn(self.base_vessel, base_kps2, no_fp_vessel, np_fp_kpt2, good2, flags=2, outImg=None)
-
-
-                # Image.fromarray(matching_img2).save("./montage_7etdrs/{}_vessel.jpg".format(no_fp_idx))
-
-            # fp_vessel = np.zeros(base_img.shape[:2])
-            # fp_vessel[:img_vessel['vessel'].shape[0], :img_vessel['vessel'].shape[1]] = img_vessel['vessel']
 
             matching_img = cv2.drawMatchesKnn(base_img, base_kps,
                                               fp_img, fp_kpt, matching_good[1], flags=2,
@@ -590,7 +579,6 @@ class regist_SIFT_montage():
                                                                result_registed_mask] = self.do_registration(
                 [base_img, base_mask],
                 [fp_img, fp_mask], matching_good[2])
-            Image.fromarray(matching_img).save("./montage_7etdrs/{}.jpg".format(matching_good[0]))
 
 
 
@@ -747,51 +735,29 @@ class regist_SIFT_montage():
                 tmp_img[:self.img_vessel_list[idx]['vessel'].shape[0], :self.img_vessel_list[idx]['vessel'].shape[1]] = self.img_vessel_list[idx]['vessel']
                 self.img_vessel_list[idx]['vessel'] = tmp_img.copy()
 
-                tmp_img = np.zeros(base_img.shape[:2]).astype(np.uint8)
-                tmp_img[:self.img_vessel_list[idx]['branch'].shape[0], :self.img_vessel_list[idx]['branch'].shape[1]] = \
-                self.img_vessel_list[idx]['branch']
-                self.img_vessel_list[idx]['branch'] = tmp_img.copy()
-
 
             if self.using_VPmap == True:
-                img_kps, img_descs, img_sift_kpt_img, _ = self.get_sift_kpt(img_idx, exist_mask,
+                img_kps, img_descs = self.get_sift_kpt(img_idx, exist_mask,
                                                                 is_VesselMask=self.img_vessel_list[idx]['vessel'],
                                                                 hess_thresh=self.hess_thresh)
-                base_kpt, base_descs, base_sift_kpt_img, kpt_img = self.get_sift_kpt(base_img, base_mask,
+                base_kpt, base_descs = self.get_sift_kpt(base_img, base_mask,
                                                                                           is_VesselMask=self.base_vessel['vessel'],
                                                                                           hess_thresh=self.hess_thresh)
             else:
-                img_kps, img_descs, img_sift_kpt_img, _ = self.get_sift_kpt(img_idx, exist_mask, is_VesselMask=None,
+                img_kps, img_descs = self.get_sift_kpt(img_idx, exist_mask, is_VesselMask=None,
                                                                 hess_thresh=self.hess_thresh)
-                base_kpt, base_descs, base_sift_kpt_img, kpt_img = self.get_sift_kpt(base_img, base_mask,
+                base_kpt, base_descs = self.get_sift_kpt(base_img, base_mask,
                                                                                           is_VesselMask=None,
                                                                                           hess_thresh=self.hess_thresh)
-
-            # Image.fromarray(img_sift_kpt_img).save("./montage_7etdrs/1_2_SIFT_result/{}.jpg".format(idx))
-
-
-
-
-
-
             good = self.matching(base_kpt, base_descs,
-                                 img_kps, img_descs,
-                                 base_mask, self.mask, distance_m=self.matching_distance)
-
-
-
+                                 img_kps, img_descs, distance_m=self.matching_distance)
             h, good_homography = self.find_homography(base_kpt, img_kps, good)
-
-
             result_flag, [result_base_img, result_base_mask], [result_img_idx, result_img_mask] = \
                 self.do_registration([base_img, base_mask], [img_idx, self.mask], h)
 
             if result_flag == False:
                 continue
             registration_result = self.registration_result(result_img_mask, self.mask)
-
-
-
             if 0.9 < registration_result < 1.1:
 
                 base_img = result_base_img
@@ -804,51 +770,9 @@ class regist_SIFT_montage():
 
 
             self.base_vessel['vessel'], self.vessel_img_list[idx]['vessel'] = self.registrationFromMatrix(self.base_vessel['vessel'], self.vessel_img_list[idx]['vessel'])
-            self.base_vessel['branch'], _ = self.registrationFromMatrix(self.base_vessel['branch'], self.vessel_img_list[idx]['branch'])
-
-            rigid_matrix = np.dot(self.h, self.ht)
-            # target_branch = np.insert(self.vessel_img_list[idx]['branch'], 2, 1, axis=2).reshape(-1, 3, 1)
-            target_branch = np.insert(cv2.findNonZero(self.vessel_img_list[idx]['branch'].astype(np.uint8)), 2, 1, axis=2).reshape(-1, 3, 1)
-            branch_mapping = np.zeros(
-                [self.base_vessel['vessel'].shape[0], self.base_vessel['vessel'].shape[1], 3])
-            branch_mapping[:, :, 0] = self.base_vessel['branch']
-            try:
-                for target_branch_idx in target_branch:
-                    branch_pt = np.dot(rigid_matrix, target_branch_idx)
-                    branch_pt = branch_pt[:2] / branch_pt[2]
-                    branch_mapping[int(branch_pt[1]), int(branch_pt[0]), 2] = 255
-            except:
-                print('error')
-
-
-
-            # for surf_idx, surf_result_img in enumerate([base_img, img_idx, self.base_vessel, base_mask, img_mask, self.vessel_img_list[idx]]):
-            #     Image.fromarray(surf_result_img.astype(np.uint8)).save("./montage_7etdrs/1_2_SIFT_result/{}_{}.jpg".format('surf_result', surf_idx))
-
-            before = datetime.now()
             [img_idx, img_vessel, img_mask, bsp] = self.do_bspline(img_idx, self.base_vessel['vessel'], self.vessel_img_list[idx]['vessel'], base_mask, img_mask)
 
-            # bsp = bspline_class(img_idx, self.base_vessel['vessel'], self.vessel_img_list[idx]['vessel'], base_mask, img_mask)
-            # img_idx, img_vessel, img_mask = bsp.regi_disc_FP, bsp.regi_FPVessel, bsp.regi_target_mask
-            after = datetime.now()
-            print((after - before).total_seconds())
-            # bsp.get_displacement_vector_field()[1]
-
-
-            # target_branch_bspline = bsp.registrationFromMatrix(branch_mapping[:,:,2]).astype(np.uint)
             overlap_region = cv2.bitwise_and(base_mask, img_mask)
-            branch_mapping = cv2.bitwise_and(branch_mapping, branch_mapping, mask = overlap_region)
-
-            overlap_region_rate = self.overlap_rate(base_mask, img_mask)
-
-            surf_branch_mapping = branch_mapping.copy()
-
-            branch_mapping = branch_mapping.astype(np.uint8)
-            target_branch_bspline = bsp.get_displacement_vector_pt(branch_mapping[:, :, 2]).astype(np.uint)
-            bspline_branch_mapping = branch_mapping.copy()
-            bspline_branch_mapping[:,:,2] = 0
-            bspline_branch_mapping[:,:,2] = target_branch_bspline[:,:,2]
-            bspline_branch_mapping = bspline_branch_mapping.astype(np.uint8)
 
 
             surf_center1, surf_center2, surf_overlap_region, surf_overlap_IOU = self.make_CEM_image(
@@ -871,17 +795,6 @@ class regist_SIFT_montage():
             result_vessel = cv2.threshold(np.clip((self.base_vessel['vessel'].astype(np.int) + img_vessel.astype(np.int)),0,255).astype(np.uint8),125,255, cv2.THRESH_BINARY)[1]
             self.base_vessel['vessel'] = cv2.bitwise_and(result_vessel, result_vessel, mask = base_mask)
 
-            branch_image = cv2.cvtColor(self.base_vessel['vessel'], cv2.COLOR_GRAY2BGR)
-            branch_image[:, :, 2] = self.base_vessel['vessel'] - cv2.bitwise_and(self.base_vessel['vessel'], self.base_vessel['vessel'], mask = bspline_branch_mapping[:,:,0])
-            branch_image[:, :, 0] = self.base_vessel['vessel'] - cv2.bitwise_and(self.base_vessel['vessel'], self.base_vessel['vessel'], mask = bspline_branch_mapping[:,:,2])
-            branch_image[:, :, 1] = self.base_vessel['vessel'] - cv2.bitwise_and(self.base_vessel['vessel'], self.base_vessel['vessel'], mask = cv2.cvtColor(bspline_branch_mapping, cv2.COLOR_BGR2GRAY))
-            self.branching_pt_list.append([branch_image, '{}_{}_branching.png'.format(self.base_vessel['idx'],
-                                                                                        self.img_vessel_list[idx][
-                                                                                            'idx'])])
-
-
-            cv2.imwrite("./{}_mask.jpg".format(self.regist_count), base_img)
-            cv2.imwrite("./{}_montage.jpg".format(self.regist_count), img_mask)
             self.regist_count +=1
 
 
@@ -913,9 +826,6 @@ class regist_SIFT_montage():
             temp_image[50:-50, 50:-50] = self.base_vessel['vessel'][min_y:max_y, min_x:max_x]
             self.base_vessel['vessel'] = temp_image
 
-            temp_image = copy_mask.copy()
-            temp_image[50:-50, 50:-50] = self.base_vessel['branch'][min_y:max_y, min_x:max_x]
-            self.base_vessel['branch'] = temp_image
         self.base_mask = base_mask
         self.base_img = base_img
 
@@ -975,9 +885,9 @@ class regist_SIFT_montage():
         base_mask = self.base_mask.copy()
         while(no_fp_list.__len__()):
             if self.using_VPmap == True:
-                base_kps, base_descs, base_sift_kpt_img, kpt_img = self.get_sift_kpt(base_img, base_mask, is_VesselMask = self.base_vessel['vessel'], hess_thresh = self.hess_thresh)
+                base_kps, base_descs = self.get_sift_kpt(base_img, base_mask, is_VesselMask = self.base_vessel['vessel'], hess_thresh = self.hess_thresh)
             else:
-                base_kps, base_descs, base_sift_kpt_img, kpt_img = self.get_sift_kpt(base_img, base_mask, is_VesselMask=None, hess_thresh = self.hess_thresh)
+                base_kps, base_descs = self.get_sift_kpt(base_img, base_mask, is_VesselMask=None, hess_thresh = self.hess_thresh)
 
 
             matching_good = 0
@@ -995,14 +905,13 @@ class regist_SIFT_montage():
                 # np_fp_kpt, no_fp_des, no_fp_kpt_img, kpt_img = self.get_sift_kpt(no_fp_img, fp_mask,
                 #                                                                  is_VesselMask=None, hess_thresh=self.hess_thresh)
                 if self.using_VPmap == True:
-                    np_fp_kpt, no_fp_des, no_fp_kpt_img, kpt_img = self.get_sift_kpt(no_fp_img, fp_mask,
+                    np_fp_kpt, no_fp_des = self.get_sift_kpt(no_fp_img, fp_mask,
                                                                                      is_VesselMask=no_fp_vessel, hess_thresh=50)
                 else:
-                    np_fp_kpt, no_fp_des, no_fp_kpt_img, kpt_img = self.get_sift_kpt(no_fp_img, fp_mask,
+                    np_fp_kpt, no_fp_des = self.get_sift_kpt(no_fp_img, fp_mask,
                                                                                      is_VesselMask=None, hess_thresh=50)
 
-                good = self.matching(base_kps, base_descs, np_fp_kpt, no_fp_des, base_mask,
-                                     fp_mask, distance_m= self.matching_distance)
+                good = self.matching(base_kps, base_descs, np_fp_kpt, no_fp_des, distance_m= self.matching_distance)
 
                 # good2 = self.matching(base_kps2, base_descs2, np_fp_kpt2, no_fp_des2, self.base_mask,
                 #                      fp_mask)
@@ -1023,13 +932,7 @@ class regist_SIFT_montage():
                                               fp_img, fp_kpt, matching_good[1], flags=2,
                                               outImg=None)
 
-            # matching_img2 = cv2.drawMatchesKnn(self.base_vessel, base_kps2, no_fp_vessel, np_fp_kpt2, good2, flags=2, outImg=None)
-            Image.fromarray(matching_img).save("./montage_7etdrs/{}.jpg".format(matching_good[0]))
 
-                # Image.fromarray(matching_img2).save("./montage_7etdrs/{}_vessel.jpg".format(no_fp_idx))
-
-            # fp_vessel = np.zeros(base_img.shape[:2])
-            # fp_vessel[:img_vessel['vessel'].shape[0], :img_vessel['vessel'].shape[1]] = img_vessel['vessel']
             img_vessel = self.img_vessel_none_list[matching_good[0]]
 
             try:
@@ -1073,11 +976,6 @@ class regist_SIFT_montage():
                 continue
 
             self.base_vessel['vessel'], registed_img_vessel = self.registrationFromMatrix(self.base_vessel['vessel'], fp_vessel)
-            self.base_vessel['branch'], _ = self.registrationFromMatrix(self.base_vessel['branch'],
-                                                                        img_vessel['branch'])
-
-
-
             surf_center1, surf_center2, surf_overlap_region, surf_overlap_IOU = self.make_CEM_image(self.base_vessel['vessel'], registed_img_vessel,
                                                                                                         base_mask, result_registed_mask)
 
@@ -1096,8 +994,6 @@ class regist_SIFT_montage():
             self.bspline_CEM_value += self.CEM(center1, center2, overlap_region)
             base_mask = np.clip((base_mask.astype(np.int) + bspline_mask.astype(np.int)), 0, 255).astype(np.uint8)
             self.base_vessel['vessel'] = np.clip((self.base_vessel['vessel'].astype(np.int) + img_vessel['vessel'].astype(np.int)), 0, 255).astype(np.uint8)
-            cv2.imwrite("./{}_mask.jpg".format(self.regist_count), base_img)
-            cv2.imwrite("./{}_montage.jpg".format(self.regist_count), bspline_mask)
             self.regist_count += 1
 
             no_fp_list.pop(matching_good[0])
@@ -1130,12 +1026,6 @@ class regist_SIFT_montage():
             temp_image = copy_mask.copy()
             temp_image[50:-50, 50:-50] = self.base_vessel['vessel'][min_y:max_y, min_x:max_x]
             self.base_vessel['vessel'] = temp_image
-
-            temp_image = copy_mask.copy()
-            temp_image[50:-50, 50:-50] = self.base_vessel['branch'][min_y:max_y, min_x:max_x]
-            self.base_vessel['branch'] = temp_image
-
-
 
             self.img_vessel_none_list.pop(matching_good[0])
             if no_fp_list.__len__() == 0:
@@ -1239,8 +1129,6 @@ class bspline_class():
         regi_disc_FP[:, :, 1] += bsp.registrationFromMatrix(target_fp[:, :, 1]).astype(np.uint8)
         regi_disc_FP[:, :, 2] += bsp.registrationFromMatrix(target_fp[:, :, 2]).astype(np.uint8)
         regi_disc_FOV = bsp.registrationFromMatrix(target_mask).astype(np.uint8)
-
-        print((after - before).total_seconds())
         return regi_disc_FP, regi_FPVessel, regi_disc_FOV, bsp
 
     #overlap mask : overlap region mask, target_mask : target image region mask, return : axis information
