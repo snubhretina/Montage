@@ -8,7 +8,7 @@ from PIL import Image
 from plantcv import plantcv as pcv
 # "../jooyoung/DB_extract/example_seven_standard_extension/"
 parser = argparse.ArgumentParser(description='Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages')
-parser.add_argument('--input_path', default="../../jooyoung/DB_extract/example_seven_standard_extension/", type=str, help='dir path for input')
+parser.add_argument('--input_path', default="./data/", type=str, help='dir path for input')
 parser.add_argument('--output_path', default="./res/", type=str, help='dir path for output')
 
 args = parser.parse_args()
