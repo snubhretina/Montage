@@ -12,7 +12,9 @@ you need to extract segmentation model and disc detection model network
 Currently, these model no provide
 
 example
-#Citation
+Citation
+---
+'''
 @article{kim2021fully,
   title={Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages},
   author={Kim, Jooyoung and Go, Sojung and Noh, Kyoung Jin and Park, Sang Jun and Lee, Soochahn},
@@ -23,3 +25,4 @@ example
   year={2021},
   publisher={Multidisciplinary Digital Publishing Institute}
 }
+'''
