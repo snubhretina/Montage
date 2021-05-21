@@ -1,7 +1,8 @@
 Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages
 ---
 
-#Introduction
+Introduction
+---
 This repository described in the paper "Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages" (https://www.mdpi.com/2076-3417/11/4/1754)
 ```
 python main.py --input_path="./" --output_path="./res/"
