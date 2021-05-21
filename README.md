@@ -20,10 +20,6 @@ Citation
   title={Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages},
   author={Kim, Jooyoung and Go, Sojung and Noh, Kyoung Jin and Park, Sang Jun and Lee, Soochahn},
   journal={Applied Sciences},
-  volume={11},
-  number={4},
-  pages={1754},
-  year={2021},
-  publisher={Multidisciplinary Digital Publishing Institute}
+  year={2021}
 }
 ```
