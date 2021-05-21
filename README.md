@@ -14,7 +14,7 @@ Currently, these model no provide
 example
 Citation
 ---
-'''
+```
 @article{kim2021fully,
   title={Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages},
   author={Kim, Jooyoung and Go, Sojung and Noh, Kyoung Jin and Park, Sang Jun and Lee, Soochahn},
@@ -25,4 +25,4 @@ Citation
   year={2021},
   publisher={Multidisciplinary Digital Publishing Institute}
 }
-'''
+```
