@@ -3,7 +3,7 @@
 
 ## Introduction
 This repository described in the paper "Fully Leveraging Deep Learning Methods for Constructing Retinal Fundus Photomontages" (https://www.mdpi.com/2076-3417/11/4/1754)
-![1_overview_sojung_revision_1230.pdf](https://github.com/snubhretina/Montage/files/6575462/1_overview_sojung_revision_1230.pdf)
+![example](https://user-images.githubusercontent.com/64057617/120308126-b6dfa280-c30e-11eb-9535-2490e32c61aa.PNG)
 ## Usage
 
 ### Installation
