@@ -20,16 +20,17 @@ pip3 install -r requirements.txt
 ### Run
 
 ```
-python main.py --input_path="./" --output_path="./res/"
+python main.py --input_path="./data" --output_path="./res/" --seg_model_path = "./model/seg_model.pth" --detection_model_path = "./model/detection_model.pth"
 ```
-you need to extract segmentation model and disc detection model network
+you can choose whether to use detection model if detection_model_path argument is not, process image sorting with keypoint matching .
 
+**Train optic disc and fovea detection**
 ```
 python Faster_RCNN_train.py --input_path="./" --output_path="./res/"
 ```
 
 train faster rcnn is based on pytorch. you can find additional information in this cite [here] https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html. 
-example
+
 
 ## Citation
 ```
