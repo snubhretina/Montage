@@ -18,7 +18,6 @@ pip3 install -r requirements.txt
 * Unzip and move the pretrained parameters to models/
 
 ### Run
-
 ```
 python main.py --input_path="./data" --output_path="./res/" --seg_model_path = "./model/seg_model.pth" --detection_model_path = "./model/detection_model.pth"
 ```
