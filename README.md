@@ -27,7 +27,7 @@ you can choose whether to use detection model if detection_model_path argument i
 ```
 python Faster_RCNN_train.py --input_path="./" --output_path="./res/"
 ```
-this code will add at jun 03 in korea
+this code will add at jun 03 in kor
 train faster rcnn is based on pytorch. you can find additional information in this cite [here] https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html. 
 
 
